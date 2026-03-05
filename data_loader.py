@@ -4,6 +4,7 @@ from sentence_transformers import SentenceTransformer
 
 EMBED_MODEL = "intfloat/multilingual-e5-large"
 
+#размер окна нейронки
 EMBED_DIM = 1024
 
 model = SentenceTransformer(EMBED_MODEL)
