@@ -1,17 +1,17 @@
-import pyndatic
+import pydantic
 
-class RAGChunkAndSrc(pyndatic.Basemodel):
+class RAGChunkAndSrc(pydantic.BaseModel):
     chunks: list[str]
     source_id: str = None
 
-class RAGUpsertResult(pyndatic.Basemodel):
+class RAGUpsertResult(pydantic.BasemMdel):
     ingested: int
 
-class RAGSearchResult(pyndatic.Basemodel):
+class RAGSearchResult(pydantic.BaseModel):
     context: list[str]
     source: list[str]
 
-class RAGQueryResult(pyndatic.Basemodel):
+class RAGQueryResult(pydantic.BaseModel):
     answer: str
     sources: list[str]
     num_cotexts: int

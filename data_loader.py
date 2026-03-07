@@ -1,6 +1,18 @@
 from llama_index.readers.file import PDFReader
 from llama_index.core.node_parser import SentenceSplitter
 from sentence_transformers import SentenceTransformer
+from huggingface_hub import login
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+token = os.getenv("API_TOKEN")
+
+login(
+    token= token,
+    add_to_git_credential = True 
+)
 
 EMBED_MODEL = "intfloat/multilingual-e5-large"
 
