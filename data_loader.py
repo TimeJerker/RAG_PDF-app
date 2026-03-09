@@ -16,7 +16,7 @@ login(
 
 EMBED_MODEL = "intfloat/multilingual-e5-large"
 
-#размер окна нейронки
+#размер вектора нейронки
 EMBED_DIM = 1024
 
 model = SentenceTransformer(EMBED_MODEL)
@@ -31,10 +31,14 @@ def load_and_chunk_pdf(path: str):
         chunks.extend(splitter.split_text(t))
     return chunks
 
-def embed_texts(texts: list[str]) -> list[list[float]]:
+def embed_texts(texts: list[str], is_query: bool = False) -> list[list[float]]:
     #некоторые модели требуют префикс для лучших результатов
-    if "e5" in EMBED_MODEL.lower():
-        texts = [f"passage: {text}" for text in texts]
+    if is_query:
+        # Это поисковый запрос
+        prefixed_texts = [f"query: {text}" for text in texts]
+    else:
+        # Это документы для индексации
+        prefixed_texts = [f"passage: {text}" for text in texts]
     
     embedding = model.encode(
         texts,
