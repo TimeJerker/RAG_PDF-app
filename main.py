@@ -19,10 +19,11 @@ from langchain.agents import create_agent
 load_dotenv()
 
 ollama = init_chat_model(
-    model="",
+    model="qwen3.5:9b",
     model_provider="ollama",
     temperature=0.1,
-    max_tokens=512
+    max_tokens=512,
+    base_url="http://127.0.0.1:11434"
 )
 
 inngest_client = inngest.Inngest(
@@ -82,15 +83,18 @@ async def rag_query_pdf_ai(ctx: inngest.Context):
         "Ответь кратко, используя только контекст выше.")
     ])
     
-    chain = ollama | prompt
+    chain = prompt | ollama
 
-    response = chain.invoke({
+    response = await chain.ainvoke({ #асинхронный вызов ainvoke
         "context_block":context_block,
         "question": question
     })
 
-    answer = response.choices[0].message.content.strip()
-    return {"answer": answer, "sources": found.sources, "num_contexts": len(found.contexts)}
+    answer = response.content.strip()
+    return {"answer": answer, 
+            "sources": found.sources, 
+            "num_contexts": len(found.contexts)
+    }
 
 app = FastAPI()
 

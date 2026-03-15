@@ -37,12 +37,14 @@ class QdrantStorage:
         contexts = []
         sources = set()
 
-        for i in results:
-            payload = getattr(i, "payload", None) or {} # or если вернул что-то ложное
+        for point in results.points:
+            payload = point.payload or {}
             text = payload.get("text", "")
             source = payload.get("source", "")
+
             if text:
                 contexts.append(text)
-                sources.add(source)
+                if source:
+                    sources.add(source)
         
         return {"contexts": contexts, "sources": list(sources)}
