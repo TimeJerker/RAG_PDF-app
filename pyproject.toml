@@ -7,10 +7,13 @@ requires-python = ">=3.13"
 dependencies = [
     "fastapi>=0.133.0",
     "inngest>=0.5.15",
+    "langchain>=1.2.12",
+    "langchain-ollama>=1.0.1",
     "litellm>=1.82.0",
     "llama-index-core>=0.14.15",
     "llama-index-readers-file>=0.5.6",
     "pydantic>=2.12.5",
+    "pyproject-toml>=0.1.0",
     "python-dotenv>=1.2.1",
     "qdrant-client>=1.17.0",
     "requests>=2.32.5",

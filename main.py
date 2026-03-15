@@ -12,18 +12,18 @@ import datetime
 from qdrant_bd import QdrantStorage
 from data_loader import load_and_chunk_pdf, embed_texts
 from custom_types import RAGChunkAndSrc, RAGQueryResult, RAGSearchResult, RAGUpsertResult
+from langchain.chat_models import init_chat_model
+from langchain_core.prompts import ChatPromptTemplate
+from langchain.agents import create_agent
 
 load_dotenv()
 
-# model = pipeline(
-#     model="IlyaGusev/saiga_llama3_8b",
-#     device=0,
-#     max_length=512,
-#     temperature=0.1,
-#     truncation=True
-# )
-
-# llm = HuggingFacePipeLine(pipeline=model)
+ollama = init_chat_model(
+    model="",
+    model_provider="ollama",
+    temperature=0.1,
+    max_tokens=512
+)
 
 inngest_client = inngest.Inngest(
     app_id="rag-app",
@@ -73,24 +73,21 @@ async def rag_query_pdf_ai(ctx: inngest.Context):
     found = await ctx.step.run("embed-and-search", lambda: _search(question,top_k), output_type=RAGSearchResult)
     
     context_block = "\n\n".join(f"- {c}" for c in found.contexts)
-    user_content = (
-        "Используй следующий контекст для ответа на вопрос.\n\n"
-        f"Контекст:\n{context_block}\n\n"
-        f"Вопрос: {question}\n"
-        "Ответь кратко, используя только контекст выше."
-    ) 
 
-    response = completion(
-        model="openrouter/IlyaGusev/saiga_llama3_8b",
-        messages=[
-            {"role": "system", "content": "Ты отвечаешь на вопросы только на основе предоставленного контекста."},
-            {"role": "user", "content": user_content}
-        ],
-        temperature=0.1,
-        max_tokens=512,
-        api_base="https://router.huggingface.co",
-        api_key=os.getenv("API_TOKEN")
-    )
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", "Ты отвечаешь на вопросы только на основе предоставленного контекста на русском."),
+        ("human", "Используй следующий контекст для ответа на вопрос.\n\n"
+        "Контекст:\n{context_block}\n\n"
+        "Вопрос: {question}\n"
+        "Ответь кратко, используя только контекст выше.")
+    ])
+    
+    chain = ollama | prompt
+
+    response = chain.invoke({
+        "context_block":context_block,
+        "question": question
+    })
 
     answer = response.choices[0].message.content.strip()
     return {"answer": answer, "sources": found.sources, "num_contexts": len(found.contexts)}
