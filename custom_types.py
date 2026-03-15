@@ -15,3 +15,8 @@ class RAGQueryResult(pydantic.BaseModel):
     answer: str
     sources: list[str]
     num_cotexts: int
+
+class RAGPathChunks(pydantic.BaseModel):
+    path: str
+    len_chunks: int
+    source_id: str = None

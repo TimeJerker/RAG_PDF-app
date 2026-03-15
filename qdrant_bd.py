@@ -1,5 +1,8 @@
 from qdrant_client import QdrantClient
 from qdrant_client.models import VectorParams, Distance, PointStruct
+import logging
+
+logger = logging.getLogger(__name__)
 
 class QdrantStorage:
     def __init__(self, url="http://localhost:6333", collection = "docs", dim = 1024):
@@ -33,6 +36,8 @@ class QdrantStorage:
             with_payload=True,
             limit=top_k
         )
+
+        logger.info("Inside the result: ", results)
 
         contexts = []
         sources = set()

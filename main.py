@@ -1,20 +1,15 @@
 import logging
-from transformers import pipeline
-from litellm import completion
 from fastapi import FastAPI
 import inngest
 import inngest.fast_api
-from inngest.experimental import ai
 from dotenv import load_dotenv
 import uuid
-import os
-import datetime
 from qdrant_bd import QdrantStorage
 from data_loader import load_and_chunk_pdf, embed_texts
-from custom_types import RAGChunkAndSrc, RAGQueryResult, RAGSearchResult, RAGUpsertResult
+from custom_types import RAGChunkAndSrc, RAGQueryResult, RAGSearchResult, RAGUpsertResult, RAGPathChunks
 from langchain.chat_models import init_chat_model
 from langchain_core.prompts import ChatPromptTemplate
-from langchain.agents import create_agent
+import json
 
 load_dotenv()
 
@@ -38,22 +33,25 @@ inngest_client = inngest.Inngest(
     trigger= inngest.TriggerEvent(event="rag/ingest_pdf")
     )
 async def rag_ingest_pdf(ctx: inngest.Context):
-    def _load(ctx: inngest.Context) -> RAGChunkAndSrc:
+    def _load(ctx: inngest.Context) -> RAGPathChunks:
         pdf_path = ctx.event.data["pdf_path"] #достаем из ввода пользоваетля например: "pdf_path": "/documents/report.pdf"
         source_id = ctx.event.data.get("source_id", pdf_path)
-        chunks = load_and_chunk_pdf(pdf_path)
-        return RAGChunkAndSrc(chunks=chunks, source_id=source_id)
+        path_chunks, len_chunks = load_and_chunk_pdf(pdf_path)
+        return RAGPathChunks(path=path_chunks,len_chunks=len_chunks,source_id=source_id)
+        #return RAGChunkAndSrc(chunks=chunks, source_id=source_id)
     
-    def _upsert(chunk_and_src: RAGChunkAndSrc) -> RAGUpsertResult:
-        chunks = chunks_and_src.chunks
+    def _upsert(chunks_and_src: RAGPathChunks) -> RAGUpsertResult:
+        chunks_path = chunks_and_src.path
         source_id = chunks_and_src.source_id
+        with open(chunks_path, "r", encoding="utf-8") as f:
+            chunks = json.load(f)
         vecs = embed_texts(chunks)
         ids = [str(uuid.uuid5(uuid.NAMESPACE_URL, f"{source_id}:{i}")) for i in range(len(chunks))]
         payload = [{"source":source_id,"text":chunks[i]} for i in range(len(chunks))]
         QdrantStorage().upsert(ids,vecs,payload)
         return RAGUpsertResult(ingested=len(chunks))
 
-    chunks_and_src = await ctx.step.run("load-and-chunk", lambda: _load(ctx), output_type=RAGChunkAndSrc)
+    chunks_and_src = await ctx.step.run("load-and-chunk", lambda: _load(ctx), output_type=RAGPathChunks)
     ingested = await ctx.step.run("embed-and-upsert", lambda: _upsert(chunks_and_src), output_type=RAGUpsertResult)
     return ingested.model_dump()
 

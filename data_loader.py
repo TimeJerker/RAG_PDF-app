@@ -4,6 +4,8 @@ from sentence_transformers import SentenceTransformer
 from huggingface_hub import login
 from dotenv import load_dotenv
 import os
+import json
+from pathlib import Path
 
 load_dotenv()
 
@@ -29,7 +31,11 @@ def load_and_chunk_pdf(path: str):
     chunks = []
     for t in texts:
         chunks.extend(splitter.split_text(t))
-    return chunks
+    p = Path(path)
+    chunks_path = str(p.with_name(p.stem + "_chunks.json"))
+    with open(chunks_path, "w", encoding="utf-8") as ch:
+        json.dump(chunks, ch, ensure_ascii=False)
+    return chunks_path, len(chunks)
 
 def embed_texts(texts: list[str], is_query: bool = False) -> list[list[float]]:
     #некоторые модели требуют префикс для лучших результатов
@@ -41,7 +47,7 @@ def embed_texts(texts: list[str], is_query: bool = False) -> list[list[float]]:
         prefixed_texts = [f"passage: {text}" for text in texts]
     
     embedding = model.encode(
-        texts,
+        prefixed_texts,
         normalize_embeddings=True,
         show_progress_bar=True,
         batch_size=32
