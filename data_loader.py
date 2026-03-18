@@ -20,6 +20,7 @@ EMBED_MODEL = "intfloat/multilingual-e5-large"
 
 #размер вектора нейронки
 EMBED_DIM = 1024
+NUMBER_FILE_CHUNK = 1
 
 model = SentenceTransformer(EMBED_MODEL)
 
@@ -31,8 +32,8 @@ def load_and_chunk_pdf(path: str):
     chunks = []
     for t in texts:
         chunks.extend(splitter.split_text(t))
-    p = Path(path)
-    chunks_path = str(p.with_name(p.stem + "_chunks.json"))
+    chunks_path = str(os.path.join(os.getcwd(),"chunks", f"chunk_{NUMBER_FILE_CHUNK}.json"))
+    NUMBER_FILE_CHUNK += 1
     with open(chunks_path, "w", encoding="utf-8") as ch:
         json.dump(chunks, ch, ensure_ascii=False)
     return chunks_path, len(chunks)
