@@ -38,7 +38,6 @@ async def rag_ingest_pdf(ctx: inngest.Context):
         source_id = ctx.event.data.get("source_id", pdf_path)
         path_chunks, len_chunks = load_and_chunk_pdf(pdf_path)
         return RAGPathChunks(path=path_chunks,len_chunks=len_chunks,source_id=source_id)
-        #return RAGChunkAndSrc(chunks=chunks, source_id=source_id)
     
     def _upsert(chunks_and_src: RAGPathChunks) -> RAGUpsertResult:
         chunks_path = chunks_and_src.path
