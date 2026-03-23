@@ -5,6 +5,17 @@ import os
 from pathlib import Path
 import time
 import requests
+import logging
+
+logging.basicConfig(
+    filename="app_logs.log",
+    filemode="a",
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    level=logging.INFO,
+    force= True
+)
+
+logger = logging.getLogger(__name__)
 
 st.set_page_config(page_title="RAG Ingest app",layout="centered")
 
@@ -23,6 +34,7 @@ def file_create_and_save_path(file) -> Path:
     with open(file_path, "wb") as f:
         f.write(pdf_data)
 
+    logger.info(f"Send url: {file_path}")
     return file_path
 
 async def send_path_to_rag_ingest_event(path: Path) -> None:
@@ -48,13 +60,14 @@ if uploaded:
 
     st.success("File uploaded!")
 
-async def send_rag_query_event(question: str):
+async def send_rag_query_event(question: str, top_k: int):
     client = get_Inngest_client()
     result = await client.send(
         inngest.Event(
             name="rag/query_pdf_ai",
             data={
                 "question": question,
+                "top_k": top_k
             },
         )
     )
@@ -88,17 +101,22 @@ def wait_to_run_output(event_id: str, timeout_s: float = 120.0, poll_interval_s:
             raise TimeoutError(f"Timed out eaiting for run output (last status {last_status})")
         time.sleep(poll_interval_s)
 
-question = st.chat_input("Enter a question")
 
-with st.form(key="entering question"):
-    submitted = st.form_submit_button("Ask")
-    
-    if question:
+with st.form("ask_question"):
+    question = st.text_input("Enter a question")
+    top_k = st.selectbox("choose count of source: ", (1,2,3,4,5))
+    button_submit = st.form_submit_button("Ask")
+        
+    if button_submit and question.strip():
         with st.spinner("Sending event and generation answer..."):
-            event_id = asyncio.run(send_rag_query_event(question.strip))
+            event_id = asyncio.run(send_rag_query_event(question.strip(), int(top_k)))
             output = wait_to_run_output(event_id)
             answer = output.get("answer", "(No relevant responce)")
-            source = output.get("source", [])
+            sources = output.get("source", [])
 
         st.subheader("Answer")
         st.write(answer)
+        if sources:
+            st.caption("Sources")
+            for s in sources:
+                st.write(f"- {s}")

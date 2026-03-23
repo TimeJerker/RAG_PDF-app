@@ -20,7 +20,7 @@ EMBED_MODEL = "intfloat/multilingual-e5-large"
 
 #размер вектора нейронки
 EMBED_DIM = 1024
-NUMBER_FILE_CHUNK = 1
+
 
 model = SentenceTransformer(EMBED_MODEL)
 
@@ -32,8 +32,14 @@ def load_and_chunk_pdf(path: str):
     chunks = []
     for t in texts:
         chunks.extend(splitter.split_text(t))
-    chunks_path = str(os.path.join(os.getcwd(),"chunks", f"chunk_{NUMBER_FILE_CHUNK}.json"))
-    NUMBER_FILE_CHUNK += 1
+    path_dir = Path.cwd() / "chunks"
+    number = len(list(path_dir.glob("chunk_*.json"))) + 1
+    try:  
+        create_file = os.makedirs("chunks")
+        chunks_path = str(os.path.join(os.getcwd(),"chunks", f"chunk_{number}.json"))
+    except FileExistsError:
+        chunks_path = str(os.path.join(os.getcwd(),"chunks", f"chunk_{number}.json"))
+        
     with open(chunks_path, "w", encoding="utf-8") as ch:
         json.dump(chunks, ch, ensure_ascii=False)
     return chunks_path, len(chunks)
