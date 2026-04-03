@@ -35,7 +35,7 @@ def load_and_chunk_pdf(path: str):
     path_dir = Path.cwd() / "chunks"
     number = len(list(path_dir.glob("chunk_*.json"))) + 1
     try:  
-        create_file = os.makedirs("chunks")
+        os.makedirs("chunks")
         chunks_path = str(os.path.join(os.getcwd(),"chunks", f"chunk_{number}.json"))
     except FileExistsError:
         chunks_path = str(os.path.join(os.getcwd(),"chunks", f"chunk_{number}.json"))
